@@ -136,16 +136,12 @@ for(i in 1:5){  ## loop over parameters
   sens_j$slope[i] = coef(fit_ij)[2]  ## extract slope
   sens_j$linR2[i]    = summary(fit_ij)$r.squared ## extract R squared
   
-  ## calculate R2 around a trendline  (note: don't worry about being able to reproduce this bit)
-  trend = lowess(Tpred[,i],Aconf[,j])  ## trendline
-  MSE   = mean((trend$y - Aconf[order(Tpred[,i]),j])^2) ## mean square error around trendline
-  sens_j$trendR2[i] = max(1 - MSE/var(Aconf[,j]),0)             
+             
   
   ## diagnostic plots
   plot(Tpred[,i],Aconf[,j],xlab=colnames(Tpred)[i])
-  lines(trend,col="green")
   abline(fit_ij,col="orange")
-  legend("topleft",legend=c("regression","trendline"),lty=1,lwd=3,col=c("orange","green"))
+  legend("topleft",legend=c("regression"),lty=1,lwd=3,col=c("orange"))
 }
 
 sens_j
@@ -170,7 +166,7 @@ If we want to look at how the sensitivities change as Ci changes, we can put our
 sens <- function(j){
   
   sens_j = as.data.frame(matrix(NA,5,3)) ## create a DF to save results
-  colnames(sens_j) = c("slope","linR2","trendR2")
+  colnames(sens_j) = c("slope","linR2")
   rownames(sens_j) =  c("Vcmax","K","cp","r","sigma")
   
   for(i in 1:5){  ## loop over parameters
@@ -179,11 +175,7 @@ sens <- function(j){
   fit_ij = lm(Aconf[,j] ~ Tpred[,i]) ## fit a line of the jth prediction to the ith parameter
   sens_j$slope[i] = coef(fit_ij)[2]
   sens_j$linR2[i]    = summary(fit_ij)$r.squared
-  
-  ## calculate R2 around a trendline  (note: don't worry about being able to reproduce this bit)
-  trend = lowess(Tpred[,i],Aconf[,j])  ## trendline
-  MSE   = mean((trend$y - Aconf[order(Tpred[,i]),j])^2) ## mean square error around trendline
-  sens_j$trendR2[i] = max(1 - MSE/var(Aconf[,j]),0)             
+             
   
  }
   
@@ -194,7 +186,7 @@ sens <- function(j){
 and then loop over all of our values of Ci
 
 ```{r}
-sens_array = array(NA,dim=c(length(newdata$Ci),5,3))
+sens_array = array(NA,dim=c(length(newdata$Ci),5,2))
 for(j in 1:length(newdata$Ci)){
   sens_array[j,,] = as.matrix(sens(j))
 }
@@ -207,8 +199,7 @@ plot(newdata$Ci, sens_array[,1,1],main=colnames(Tpred)[1],
      type='l',ylab="slope") ## Vcmax slope
 plot(newdata$Ci, sens_array[,1,2],main=colnames(Tpred)[1],
      type='l',ylab="R2",ylim=range(sens_array[,1,2:3])) ## Vcmax linear R2
-lines(newdata$Ci,sens_array[,1,3],main=colnames(Tpred)[1],
-      col="green") ## Vcmax trend R2
+
 ```
 
 * Using a loop, plot how the slope and R2 change with Ci for all of the parameters. Describe the trends.
